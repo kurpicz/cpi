@@ -22,7 +22,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   pasta_block_tree
   GIT_REPOSITORY https://github.com/pasta-toolbox/block_tree.git
-  GIT_TAG        5356b43 #main
+  GIT_TAG        8ca8744 #main
 )
 
 FetchContent_MakeAvailable(tlx pasta_bit_vector pasta_block_tree)
