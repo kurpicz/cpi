@@ -19,7 +19,6 @@
  ******************************************************************************/
 
 #include "benchmark_file_reader.hpp"
-#include "cpi/block_tree_compression.hpp"
 #include "cpi/run_length_compression.hpp"
 
 #include <filesystem>
@@ -29,20 +28,23 @@ class CLIBenchmark {
   std::filesystem::path path_;
 
 public:
-  /* Test */
   CLIBenchmark(std::filesystem::path path) : path_(path) {}
 
   void run() {
-    cpi::BenchmarkFileReader<uint8_t> file_reader(path_);
+    cpi::BenchmarkFileReader<uint16_t> file_reader(path_);
     file_reader.read_file();
 
     cpi::RunLengthCompression rlc(file_reader.partition_ids());
 
-    auto tmp_partition_ids = file_reader.partition_ids();
-    cpi::BlockTreeCompression btc(tmp_partition_ids);
+
+    std::cout << "RESULT"
+              << " algorithm=rlc"
+              << " input=" << path_.filename().string() << " ";
 
     rlc.print_statistics();
-    btc.print_statistics();
+
+    std::cout << "\n";
+
   }
 
 }; // class CLIBenchmark

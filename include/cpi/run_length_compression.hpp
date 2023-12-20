@@ -20,10 +20,10 @@
 
 #pragma once
 
-#include "pasta/bit_vector/bit_vector.hpp"
-
 #include <algorithm>
 #include <iostream>
+#include <la_vector.hpp>
+#include <pasta/bit_vector/bit_vector.hpp>
 #include <vector>
 
 namespace cpi {
@@ -31,9 +31,8 @@ namespace cpi {
 template <typename Alphabet>
 class RunLengthCompression {
   std::vector<Alphabet> run_heads_;
-  std::vector<size_t> head_positions_;
-  // RankStructure ranks_;
-
+  std::vector<std::size_t> head_positions_;
+  la_vector<std::size_t, 6> rank_select_;
   size_t size_ = 0;
   size_t max_partition_id_ = 0;
 
@@ -43,21 +42,22 @@ public:
     if (input.size() == 0) {
       return;
     }
+
+    run_heads_.push_back(input.front());
     run_heads_.push_back(input.front());
     head_positions_.push_back(0);
     max_partition_id_ = run_heads_.back();
 
-    head_positions_.push_back(0);
-
-    for (size_t i = 1; i < input.size(); ++i) {
+    for (std::size_t i = 1; i < input.size(); ++i) {
       if (input[i] != run_heads_.back()) {
         run_heads_.push_back(input[i]);
         head_positions_.push_back(i);
         max_partition_id_ =
-            std::max<size_t>(max_partition_id_, run_heads_.back());
+	  std::max<std::size_t>(max_partition_id_, run_heads_.back());
       }
     }
-    // ranks_ = RankStructure(head_positions_);
+    head_positions_.push_back(input.size());
+    rank_select_ = la_vector<std::size_t, 6>(head_positions_);
   }
 
   void push_back(Alphabet&& value) {
@@ -69,17 +69,30 @@ public:
     }
   }
 
-  Alphabet operator[](size_t index) const {
-    // size_t const run_pos = ranks_.rank(index);
-    // return run_heads_[run_pos];
-    return Alphabet{index};
+  Alphabet operator[](std::size_t index) const {
+    std::size_t const rank = rank_select_.rank(index + 1);
+    return run_heads_[rank];
+  }
+
+  std::size_t size() const {
+    return size_;
   }
 
   void print_statistics() const {
-    std::cout << "nodes=" << size_ << " runs=" << run_heads_.size()
-              << " avg_run_length=" << 1.0f * size_ / run_heads_.size() << "\n";
+    std::size_t const space_in_bytes = size_t{run_heads_.size() * sizeof(Alphabet) +
+                                   rank_select_.size_in_bytes()};
+    auto const space_in_mib = double{space_in_bytes} / double{1024.0} / double{1024.0};
+    std::cout << "space_in_bytes=" << space_in_bytes
+	      << " uncompressed_space_in_bytes=" << size_ * sizeof(Alphabet)
+	      << " space_in_mib=" << space_in_mib 
+              << " relative=" << 100.0 / (size_ * sizeof(Alphabet)) * space_in_bytes;
+  }
 
-    std::cout << "space_usage=" << run_heads_.size() + size_ / 8.0 << '\n';
+  void print_runs() const {
+    for (size_t i = 0; i + 1 < run_heads_.size(); ++i) {
+      std::cout << run_heads_[i + 1] << ": " << head_positions_[i] << "\n";
+
+    }
   }
 
 private:
