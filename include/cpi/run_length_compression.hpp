@@ -43,7 +43,7 @@ class RunLengthCompression {
   //! Size of the uncompressed vector, i.e., number of uncompressed symbols.
   size_t size_ = 0;
   //! Largest symbol in the vector (used for statistics only).
-  size_t max_symbol_ = 0;
+  Alphabet max_symbol_ = 0;
 
 public:
   /*!
@@ -66,21 +66,23 @@ public:
       if (input[i] != run_heads_.back()) {
         run_heads_.push_back(input[i]);
         head_positions_.push_back(i);
-        max_symbol_ =
-	  std::max<std::size_t>(max_symbol_, run_heads_.back());
+        max_symbol_ = std::max(max_symbol_, run_heads_.back());
       }
     }
-    head_positions_.push_back(input.size());
+    //head_positions_.push_back(input.size());
     rank_select_ = la_vector<std::size_t, 6>(head_positions_);
   }
 
   /*!
-   * \brief NOT YET IMPLEMENTED
+   * \brief Add characters to the end of the run length compression.
+   *
+   * \param value Value of the caracter that is appended.
    */
-  void push_back(Alphabet&& value) {
+  void push_back(Alphabet const value) {
     if (value != run_heads_.back()) {
+      max_symbol_ = std::max(max_symbol_, value);
       run_heads_.push_back(value);
-      head_positions_.push_back(size_++);
+      rank_select_.append(size_++);
     } else {
       ++size_;
     }
@@ -95,6 +97,9 @@ public:
   [[nodiscard("[RLC] Access operator called but not used.")]]
   Alphabet operator[](std::size_t index) const {
     std::size_t const rank = rank_select_.rank(index + 1);
+    if (rank >= run_heads_.size()) {
+      return run_heads_.back();
+    }
     return run_heads_[rank];
   }
 

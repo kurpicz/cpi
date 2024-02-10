@@ -16,7 +16,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   la_vector
   GIT_REPOSITORY https://github.com/kurpicz/la_vector.git 
-  GIT_TAG        94a5fa3 #main
+  GIT_TAG        9fe454c #main
 )
 
 FetchContent_Declare(
@@ -38,6 +38,8 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(tlx la_vector pasta_bit_vector pasta_block_tree Catch2)
+
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(cpi INTERFACE)
 target_include_directories(cpi
