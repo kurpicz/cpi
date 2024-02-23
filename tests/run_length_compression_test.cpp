@@ -55,55 +55,30 @@ std::vector<std::uint32_t> generate_runs(std::size_t const total_length,
   return result;
 }
 
-// TEST_CASE("Run-length compression static construction", "[RUN-LENGTH COMPRESSION]") {
-//   auto max_run_length = GENERATE(1, 2, 4, 8, 16, 32, 128, 256);
-//   auto input = generate_runs(1'000'000, max_run_length);
-//   cpi::RunLengthCompression rlc(input);
+TEST_CASE("Run-length compression static construction", "[RUN-LENGTH COMPRESSION]") {
+  auto max_run_length = GENERATE( 32, 128, 256);
+  auto input = generate_runs(10'000, max_run_length);
+  cpi::RunLengthCompression rlc(input);
 
-//   REQUIRE(input.size() == rlc.size());
+  REQUIRE(input.size() == rlc.size());
 
-//   for (size_t i = 0; i < input.size(); ++i) {
-//     CHECK(input[i] == rlc[i]);
-//   }
-// }
+  for (size_t i = 0; i < input.size(); ++i) {
+    CHECK(input[i] == rlc[i]);
+  }
+}
 
 TEST_CASE("Run-length compression appending", "[RUN-LENGTH COMPRESSION]") {
-  auto max_run_length = GENERATE(32);//, 128, 256);
-  auto input = generate_runs(1'000, 2/*max_run_length*/);
-  cpi::RunLengthCompression<decltype(input)::value_type> rlc;
-
-  auto to_append = generate_runs(40, max_run_length);
-
-  for (size_t i = 0; i < to_append.size(); ++i) {
-    std::cout << "(size_t)to_append[i] " << (size_t)to_append[i] << ' ' << i <<  '\n';
-  }
+  auto max_run_length = GENERATE(32, 128, 256);
+  auto to_append = generate_runs(10'000, max_run_length);
+  cpi::RunLengthCompression<decltype(to_append)::value_type> rlc;
 
   for (auto i = size_t{0}; i < to_append.size(); ++i) {
-    // std::cout << "i " << i << " / " << to_append.size() << " appending " << to_append[i] << '\n';
     rlc.push_back(to_append[i]);
   }
 
-  size_t i = 0;
-  // for (; i < input.size(); ++i) {
-  //   // CHECK(input[i] == rlc[i]);
-  //   if (input[i] != rlc[i])
-  //     std::cout << "i " << i << '\n';
-  // }
-  for (; i < to_append.size(); ++i) {
-    // std::cout << "asking for i " << i << '\n';
+  for (size_t i = 0; i < to_append.size(); ++i) {
     CHECK(to_append[i] == rlc[i]);
-    if (to_append[i] != rlc[i]) {
-      std::cout << "###i " << i << '\n';
-      // std::cout << "to_append[i - input.size()] " << to_append[i - input.size()] << " vs " << rlc[i] << '\n';
-    }
-  }
-  // rlc.print_all_head_positions();
-
-  // for (auto const hp : rlc.all_head_positions()) {
-  //   std::cout << hp << " | " << rlc[hp] << " & " << rlc[hp + 1] << std::endl;
-  //   std::cout << rlc.rank(hp) << " & " << rlc.rank(hp + 1) << std::endl;
-  // }
-  
+  }  
 }
 
 /******************************************************************************/
