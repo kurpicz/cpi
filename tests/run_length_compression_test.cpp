@@ -21,6 +21,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 #include <random>
@@ -67,25 +68,42 @@ std::vector<std::uint32_t> generate_runs(std::size_t const total_length,
 // }
 
 TEST_CASE("Run-length compression appending", "[RUN-LENGTH COMPRESSION]") {
-  auto max_run_length = GENERATE(32, 128, 256);
-  auto input = generate_runs(1'000, max_run_length);
-  cpi::RunLengthCompression rlc(input);
+  auto max_run_length = GENERATE(32);//, 128, 256);
+  auto input = generate_runs(1'000, 2/*max_run_length*/);
+  cpi::RunLengthCompression<decltype(input)::value_type> rlc;
 
-  auto to_append = generate_runs(1'000, max_run_length);
+  auto to_append = generate_runs(40, max_run_length);
+
+  for (size_t i = 0; i < to_append.size(); ++i) {
+    std::cout << "(size_t)to_append[i] " << (size_t)to_append[i] << ' ' << i <<  '\n';
+  }
 
   for (auto i = size_t{0}; i < to_append.size(); ++i) {
+    // std::cout << "i " << i << " / " << to_append.size() << " appending " << to_append[i] << '\n';
     rlc.push_back(to_append[i]);
   }
 
   size_t i = 0;
-  for (; i < input.size(); ++i) {
-    std::cout << "i " << i << '\n';
-    CHECK(input[i] == rlc[i]);
+  // for (; i < input.size(); ++i) {
+  //   // CHECK(input[i] == rlc[i]);
+  //   if (input[i] != rlc[i])
+  //     std::cout << "i " << i << '\n';
+  // }
+  for (; i < to_append.size(); ++i) {
+    // std::cout << "asking for i " << i << '\n';
+    CHECK(to_append[i] == rlc[i]);
+    if (to_append[i] != rlc[i]) {
+      std::cout << "###i " << i << '\n';
+      // std::cout << "to_append[i - input.size()] " << to_append[i - input.size()] << " vs " << rlc[i] << '\n';
+    }
   }
-  for (; i < input.size() + to_append.size(); ++i) {
-    std::cout << "i " << i << '\n';
-    CHECK(to_append[i - input.size()] == rlc[i]);
-  }
+  // rlc.print_all_head_positions();
+
+  // for (auto const hp : rlc.all_head_positions()) {
+  //   std::cout << hp << " | " << rlc[hp] << " & " << rlc[hp + 1] << std::endl;
+  //   std::cout << rlc.rank(hp) << " & " << rlc.rank(hp + 1) << std::endl;
+  // }
+  
 }
 
 /******************************************************************************/

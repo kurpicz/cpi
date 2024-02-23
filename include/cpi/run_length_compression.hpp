@@ -25,6 +25,7 @@
 #include <la_vector.hpp>
 #include <pasta/bit_vector/bit_vector.hpp>
 #include <vector>
+#include <iterator>
 
 namespace cpi {
 /*!
@@ -32,7 +33,7 @@ namespace cpi {
  *
  * \tparam Alphabet Alphabet type of the vector that is run-length compressed.
  */
-template <typename Alphabet>
+template <typename Alphabet, std::size_t UncompressedBufferSize = 10>
 class RunLengthCompression {
   //! The character of each run (head).
   std::vector<Alphabet> run_heads_;
@@ -45,6 +46,13 @@ class RunLengthCompression {
   //! Largest symbol in the vector (used for statistics only).
   Alphabet max_symbol_ = 0;
 
+  size_t compressed_elements_;
+
+  std::array<Alphabet, UncompressedBufferSize> buffer_ = { 0 };
+  size_t buffered_elements_;
+
+  std::vector<size_t> all_head_positions_;
+  
 public:
   /*!
    * \brief Constructor computing the run-length compression.
@@ -59,19 +67,24 @@ public:
 
     run_heads_.push_back(input.front());
     run_heads_.push_back(input.front());
-    head_positions_.push_back(0);
+    head_positions_.push_back(1);
+    all_head_positions_.push_back(0);
     max_symbol_ = run_heads_.back();
 
     for (std::size_t i = 1; i < input.size(); ++i) {
       if (input[i] != run_heads_.back()) {
         run_heads_.push_back(input[i]);
         head_positions_.push_back(i);
+        all_head_positions_.push_back(i);
         max_symbol_ = std::max(max_symbol_, run_heads_.back());
       }
     }
     //head_positions_.push_back(input.size());
     rank_select_ = la_vector<std::size_t, 6>(head_positions_);
+    compressed_elements_ = input.size();
   }
+
+  RunLengthCompression() :  buffered_elements_(0), compressed_elements_(0) { }
 
   /*!
    * \brief Add characters to the end of the run length compression.
@@ -79,28 +92,62 @@ public:
    * \param value Value of the caracter that is appended.
    */
   void push_back(Alphabet const value) {
-    if (value != run_heads_.back()) {
-      max_symbol_ = std::max(max_symbol_, value);
-      run_heads_.push_back(value);
-      rank_select_.append(size_++);
-    } else {
-      ++size_;
+    buffer_[buffered_elements_++] = value;
+    if (buffered_elements_ == buffer_.size()) {
+      std::cout << "compressing " << '\n';
+      for (size_t i = 0; i < buffer_.size(); ++i) {
+        std::cout << "buffer_[i] " << buffer_[i] << '\n';
+      }
+      compress(buffer_.begin(), buffer_.end());
+      compressed_elements_ += buffered_elements_;
+      buffered_elements_ = 0;
+    }
+    ++size_;
+  }
+
+  void print_all_head_positions() const {
+    for (size_t i = 0; i < all_head_positions_.size(); ++i) {
+      std::cout << "all_head_positions_[" << i << "] " << all_head_positions_[i] << '\n';
     }
   }
 
+  auto all_head_positions() {
+    return all_head_positions_;
+  }
+
+  auto rank(size_t index) const {
+    return rank_select_.rank(index);
+  }
+  
   /*!
    * \brief Access any symbol in the compressed vector.
    *
    * \param index Index of the symbol in the (uncompressed) vector.
    * \return Symbol at index \c index in the uncompressed vector.
    */
-  [[nodiscard("[RLC] Access operator called but not used.")]]
-  Alphabet operator[](std::size_t index) const {
-    std::size_t const rank = rank_select_.rank(index + 1);
-    if (rank >= run_heads_.size()) {
-      return run_heads_.back();
+  [[nodiscard("[RLC] Access operator called but not used.")]] Alphabet
+  operator[](std::size_t index) const {
+    // for (auto const& head : run_heads_) {
+    //   std::cout << "head " << head << ", ";
+    // }
+    // std::cout << '\n';
+    // std::cout << "index " << index << '\n';
+    // std::cout << "compressed_elements_ " << compressed_elements_ << '\n';
+    if (index < compressed_elements_) {
+      auto rank = rank_select_.rank(index + 1);
+      // std::cout << "rank " << rank << '\n';
+      // std::cout << "run_heads_.size() " << run_heads_.size() << '\n';
+      if (rank == run_heads_.size()) {
+        --rank;
+      }
+      // if (rank < 1) {
+      //   ++rank;
+      // }
+      return run_heads_[rank];
+    } else {
+      // std::cout << "buffer_[index - compressed_elements_] " << buffer_[index - compressed_elements_] << '\n';
+      return buffer_[index - compressed_elements_];
     }
-    return run_heads_[rank];
   }
 
   /*!
@@ -136,6 +183,57 @@ public:
       std::cout << run_heads_[i + 1] << ": " << head_positions_[i] << "\n";
 
     }
+  }
+
+private:
+  void compress(std::random_access_iterator auto const cbegin,
+                std::random_access_iterator auto const end) {
+    auto begin = cbegin;
+    std::vector<std::size_t> local_run_starts;
+    if (!run_heads_.empty()) {
+      // run_heads_.pop_back();
+      // std::cout << "*begin " << *begin << '\n';
+      while (begin != end && *begin == run_heads_.back()) {
+        ++begin;
+      }
+      // std::cout << "std::distance(begin, cbegin) " << std::distance(begin, cbegin) << '\n';
+    } else {
+      // run_heads_.push_back(*begin);
+    }
+    while(begin < end) {
+      run_heads_.push_back(*begin);
+      std::cout << "run_heads_.back() " << run_heads_.back() << '\n';
+      if (auto start = std::distance(cbegin, begin); start != 0 || compressed_elements_ != 0)
+        local_run_starts.push_back(start);
+
+      if (!local_run_starts.empty())
+        std::cout << "local_run_starts.back() " << local_run_starts.back() << '\n';
+      ++begin;
+      while (begin < end && *begin == run_heads_.back()) {
+        ++begin;
+      }
+    }
+    if (local_run_starts.size() > 0) {
+      std::transform(
+                     local_run_starts.begin(),
+                     local_run_starts.end(),
+                     local_run_starts.begin(),
+                     [compressed_elements = compressed_elements_](std::size_t start) {
+                       return start + compressed_elements;
+                     });
+      for (auto const& run_start : local_run_starts) {
+        std::cout << "run_start " << run_start << '\n';
+      }
+      for (auto const& rh : run_heads_) {
+        std::cout << "rh " << rh << '\n';
+      }
+      rank_select_.append(local_run_starts.begin(), local_run_starts.end());
+    }
+    compressed_elements_ += std::distance(begin, end);
+    for (size_t i = 0; i < compressed_elements_; ++i) {
+      std::cout << "rank_select_.rank(" << i << ") " << rank_select_.rank(i) << '\n';
+    }
+    // run_heads_.push_back(*std::prev(end));
   }
 
 }; // class RunLengthCompression

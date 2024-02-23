@@ -43,9 +43,7 @@ public:
   }
 
   Alphabet operator[](size_t index) const {
-    // size_t const run_pos = ranks_.rank(index);
-    // return run_heads_[run_pos];
-    return Alphabet{index};
+    return bt_[index];
   }
 
   void print_statistics() const {
