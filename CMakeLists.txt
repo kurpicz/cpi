@@ -16,7 +16,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   la_vector
   GIT_REPOSITORY https://github.com/kurpicz/la_vector.git 
-  GIT_TAG        ff8007a #main
+  GIT_TAG        4b92552 #main
 )
 
 FetchContent_Declare(
@@ -44,6 +44,8 @@ SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_library(cpi INTERFACE)
 target_include_directories(cpi
   INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_precompile_headers(cpi
+  INTERFACE  ${CMAKE_CURRENT_SOURCE_DIR}/include/cpi/run_length_compression.hpp)
 target_link_libraries(cpi
   INTERFACE la_vector
   INTERFACE pasta_bit_vector)

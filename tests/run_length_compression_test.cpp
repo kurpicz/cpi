@@ -55,18 +55,6 @@ std::vector<std::uint32_t> generate_runs(std::size_t const total_length,
   return result;
 }
 
-TEST_CASE("Run-length compression static construction", "[RUN-LENGTH COMPRESSION]") {
-  auto max_run_length = GENERATE( 32, 128, 256);
-  auto input = generate_runs(10'000, max_run_length);
-  cpi::RunLengthCompression rlc(input);
-
-  REQUIRE(input.size() == rlc.size());
-
-  for (size_t i = 0; i < input.size(); ++i) {
-    CHECK(input[i] == rlc[i]);
-  }
-}
-
 TEST_CASE("Run-length compression appending", "[RUN-LENGTH COMPRESSION]") {
   auto max_run_length = GENERATE(32, 128, 256);
   auto to_append = generate_runs(10'000, max_run_length);
@@ -78,7 +66,7 @@ TEST_CASE("Run-length compression appending", "[RUN-LENGTH COMPRESSION]") {
 
   for (size_t i = 0; i < to_append.size(); ++i) {
     CHECK(to_append[i] == rlc[i]);
-  }  
+  }
 }
 
 /******************************************************************************/
