@@ -26,7 +26,6 @@
 #include <iostream>
 #include <iterator>
 #include <la_vector.hpp>
-#include <pasta/bit_vector/bit_vector.hpp>
 #include <vector>
 
 namespace cpi {
