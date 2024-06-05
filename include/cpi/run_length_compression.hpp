@@ -36,14 +36,14 @@ namespace cpi {
  * \tparam Alphabet Alphabet type of the vector that is run-length compressed.
  * \tparam bpc Bits per correction value used in \c la_vector.
  */
-  template <typename Alphabet, std::uint8_t bpc = 6, std::size_t UncompressedRuns = 64>
+  template <typename Alphabet, std::uint8_t bpc = 6, std::size_t UncompressedRuns = 64, bool enable_buffer = false>
 class RunLengthCompression {
   //! The character of each run (head).
   std::vector<Alphabet> run_heads_;
   //! The starting position of each run in the (uncompressed) vector.
   std::vector<std::size_t> head_positions_;
   //! Predecessor support for \c head_positions_ to allow fast access.
-  la_vector<std::size_t, bpc> rank_select_;
+  la_vector<std::size_t, bpc, enable_buffer> rank_select_;
   //! Size of the uncompressed vector, i.e., number of uncompressed symbols.
   size_t size_ = 0;
 
@@ -77,7 +77,7 @@ public:
       }
     }
     // head_positions_.push_back(input.size());
-    rank_select_ = la_vector<std::size_t, 6>(head_positions_);
+    rank_select_ = la_vector<std::size_t, 6, enable_buffer>(head_positions_);
     compressed_elements_ = input.size();
   }
 
