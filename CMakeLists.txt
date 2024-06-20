@@ -16,7 +16,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   la_vector
   GIT_REPOSITORY https://github.com/kurpicz/la_vector.git 
-  GIT_TAG        33aabb #main
+  GIT_TAG        121f993 #main
 )
 
 FetchContent_Declare(

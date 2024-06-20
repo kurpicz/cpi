@@ -36,7 +36,7 @@ namespace cpi {
  * \tparam Alphabet Alphabet type of the vector that is run-length compressed.
  * \tparam bpc Bits per correction value used in \c la_vector.
  */
-  template <typename Alphabet, std::uint8_t bpc = 6, std::size_t UncompressedRuns = 64, bool enable_buffer = false>
+  template <typename Alphabet, std::uint8_t bpc = 6, std::size_t UncompressedRuns = 64, bool enable_buffer = true>
 class RunLengthCompression {
   //! The character of each run (head).
   std::vector<Alphabet> run_heads_;
