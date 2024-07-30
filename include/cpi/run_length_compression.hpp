@@ -50,7 +50,7 @@ class RunLengthCompression {
   size_t compressed_elements_;
 
   std::array<Alphabet, UncompressedRuns> uncompressed_run_heads_ = {0};
-  std::array<std::int16_t, UncompressedRuns> uncompressed_run_starts_ = {0};
+  std::array<std::size_t, UncompressedRuns> uncompressed_run_starts_ = {0};
   size_t uncompressed_elements_ = size_t{0};
   size_t uncompressed_runs_ = size_t{0};
 
